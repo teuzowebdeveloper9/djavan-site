@@ -22,7 +22,7 @@ Homenagem editorial a Djavan, feita em React, Vite e Tailwind CSS, com visual pr
 
 O projeto apresenta uma pagina unica sobre Djavan com foco em:
 
-- Hero full-bleed com fotografia em preto e branco.
+- Hero full-bleed com video cinematografico e fotografia em preto e branco.
 - Copy de homenagem, sem texto de bastidor sobre layout ou tecnologia.
 - Galeria assimetrica com retratos e capas.
 - Timeline afetiva da obra.
@@ -65,6 +65,7 @@ http://localhost:6005/
 | `npm run dev` | Inicia o Vite em `localhost:6005`. |
 | `npm run build` | Valida TypeScript e gera build de producao. |
 | `npm run preview` | Serve o build localmente. |
+| `npm run generate:hero-video` | Gera `public/djavan/djavan-hero-video.mp4` a partir das imagens locais. |
 | `npm run screenshots` | Gera screenshots com Playwright em `docs/screenshots/`. |
 
 ## Atualizar screenshots
@@ -91,8 +92,9 @@ Os arquivos gerados sao:
 ```txt
 .
 |-- docs/screenshots/          # Prints usados no README
-|-- public/djavan/             # Imagens do projeto
+|-- public/djavan/             # Imagens e video hero do projeto
 |-- scripts/capture-screenshots.mjs
+|-- scripts/generate-djavan-hero-video.mjs
 |-- src/App.tsx                # Pagina principal
 |-- src/App.css                # Tailwind, tokens e animacoes globais
 |-- src/main.tsx
