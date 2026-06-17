@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 type GalleryPhoto = {
   src: string;
@@ -116,6 +116,9 @@ const marqueeItems = [
   "Samurai",
 ];
 
+const heroVideoSrc = "/djavan/djavan-hero-video.mp4";
+const heroPosterSrc = "/djavan/djavan-07.png";
+
 const headingClass =
   "m-0 font-display text-[2.48rem] font-bold leading-[0.98] text-balance md:text-[3.1rem] lg:text-[4.7rem]";
 
@@ -138,6 +141,50 @@ const galleryLayoutClasses = [
   "md:col-span-6 md:row-span-3",
   "md:col-span-6 md:row-span-3",
 ];
+
+function usePrefersReducedMotion() {
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+
+    const updatePreference = () => {
+      setPrefersReducedMotion(mediaQuery.matches);
+    };
+
+    updatePreference();
+    mediaQuery.addEventListener("change", updatePreference);
+
+    return () => mediaQuery.removeEventListener("change", updatePreference);
+  }, []);
+
+  return prefersReducedMotion;
+}
+
+function useHeroVideoAvailability() {
+  const [isHeroVideoAvailable, setIsHeroVideoAvailable] = useState(false);
+
+  useEffect(() => {
+    const controller = new AbortController();
+
+    fetch(heroVideoSrc, {
+      method: "HEAD",
+      signal: controller.signal,
+    })
+      .then((response) => {
+        setIsHeroVideoAvailable(response.ok);
+      })
+      .catch(() => {
+        if (!controller.signal.aborted) {
+          setIsHeroVideoAvailable(false);
+        }
+      });
+
+    return () => controller.abort();
+  }, []);
+
+  return isHeroVideoAvailable;
+}
 
 function useScrollReveal() {
   useEffect(() => {
@@ -178,52 +225,87 @@ function useScrollReveal() {
 
 function App() {
   useScrollReveal();
+  const prefersReducedMotion = usePrefersReducedMotion();
+  const isHeroVideoAvailable = useHeroVideoAvailability();
+  const [isHeroVideoReady, setIsHeroVideoReady] = useState(false);
+  const shouldUseHeroVideo = isHeroVideoAvailable && !prefersReducedMotion;
 
   return (
-    <main className="overflow-hidden">
+    <main className="overflow-hidden bg-black-ink">
       <section
-        className="relative isolate grid min-h-[94svh] items-end border-b border-paper/15 bg-black-ink p-[30px] max-md:min-h-[92svh] max-md:px-[18px]"
+        className="relative isolate grid min-h-svh items-end overflow-hidden border-b border-paper/15 bg-black-ink p-[30px] max-md:px-[18px]"
         aria-labelledby="hero-title"
       >
         <img
-          className="animate-hero-drift absolute inset-0 -z-20 h-full w-full object-cover object-[60%_center] opacity-70 grayscale contrast-[1.08] max-md:object-[62%_center] max-md:opacity-55"
-          src="/djavan/djavan-07.png"
+          className="animate-hero-drift absolute inset-0 -z-30 h-full w-full object-cover object-[60%_center] opacity-75 grayscale contrast-[1.1] max-md:object-[62%_center] max-md:opacity-60"
+          src={heroPosterSrc}
           alt="Djavan com roupa branca e bracos abertos"
         />
+        {shouldUseHeroVideo ? (
+          <video
+            className={`absolute inset-0 -z-20 h-full w-full object-cover object-[58%_center] grayscale contrast-[1.06] saturate-[0.88] transition duration-[1600ms] max-md:object-[63%_center] ${
+              isHeroVideoReady ? "opacity-70" : "opacity-0"
+            }`}
+            src={heroVideoSrc}
+            poster={heroPosterSrc}
+            autoPlay
+            loop
+            muted
+            playsInline
+            preload="metadata"
+            aria-hidden="true"
+            onCanPlay={() => setIsHeroVideoReady(true)}
+            onLoadedData={() => setIsHeroVideoReady(true)}
+            onError={() => setIsHeroVideoReady(false)}
+          />
+        ) : null}
         <div
-          className="absolute inset-0 -z-10 bg-[linear-gradient(90deg,rgba(8,8,8,0.96)_0%,rgba(8,8,8,0.76)_42%,rgba(8,8,8,0.28)_100%),linear-gradient(180deg,rgba(8,8,8,0.12)_0%,rgba(8,8,8,0.92)_100%)] max-md:bg-[linear-gradient(180deg,rgba(8,8,8,0.48)_0%,rgba(8,8,8,0.96)_84%),linear-gradient(90deg,rgba(8,8,8,0.88)_0%,rgba(8,8,8,0.22)_100%)]"
+          className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_72%_20%,rgba(181,155,106,0.24),transparent_32%),linear-gradient(90deg,rgba(8,8,8,0.98)_0%,rgba(8,8,8,0.79)_39%,rgba(8,8,8,0.22)_100%),linear-gradient(180deg,rgba(8,8,8,0.06)_0%,rgba(8,8,8,0.97)_100%)] max-md:bg-[radial-gradient(circle_at_80%_16%,rgba(181,155,106,0.18),transparent_38%),linear-gradient(180deg,rgba(8,8,8,0.56)_0%,rgba(8,8,8,0.98)_80%),linear-gradient(90deg,rgba(8,8,8,0.92)_0%,rgba(8,8,8,0.26)_100%)]"
+          aria-hidden="true"
+        />
+        <div
+          className="hero-grain absolute inset-0 -z-10 opacity-[0.18]"
           aria-hidden="true"
         />
 
         <nav
-          className="absolute left-[30px] right-[30px] top-6 z-30 flex justify-end gap-2 max-md:left-[18px] max-md:right-[18px] max-md:justify-start max-md:overflow-x-auto max-md:pb-2"
+          className="absolute left-[30px] right-[30px] top-6 z-30 flex items-center justify-between gap-4 max-md:left-[18px] max-md:right-[18px] max-md:block"
           aria-label="Navegacao principal"
         >
-          {navItems.map(([label, href]) => (
-            <a
-              className="inline-flex min-h-[38px] items-center whitespace-nowrap rounded-full border border-paper/15 bg-black-ink/40 px-3.5 py-2 text-paper/90 backdrop-blur-xl transition hover:-translate-y-0.5 hover:border-paper/45 hover:bg-paper/10 focus-visible:-translate-y-0.5 focus-visible:border-paper/45 focus-visible:bg-paper/10 focus-visible:outline-none"
-              href={href}
-              key={href}
-            >
-              {label}
-            </a>
-          ))}
+          <a
+            className="font-display text-[1.72rem] font-bold leading-none text-paper transition hover:text-gold focus-visible:text-gold focus-visible:outline-none max-md:hidden"
+            href="#hero-title"
+            aria-label="Voltar ao inicio"
+          >
+            Djavan
+          </a>
+          <div className="flex justify-end gap-2 max-md:justify-start max-md:overflow-x-auto max-md:pb-2">
+            {navItems.map(([label, href]) => (
+              <a
+                className="inline-flex min-h-[38px] items-center whitespace-nowrap rounded-full border border-paper/15 bg-black-ink/38 px-3.5 py-2 text-paper/90 shadow-[0_12px_34px_rgba(0,0,0,0.22)] backdrop-blur-xl transition hover:-translate-y-0.5 hover:border-gold/65 hover:bg-paper/10 hover:text-paper focus-visible:-translate-y-0.5 focus-visible:border-gold/65 focus-visible:bg-paper/10 focus-visible:outline-none"
+                href={href}
+                key={href}
+              >
+                {label}
+              </a>
+            ))}
+          </div>
         </nav>
 
         <div
-          className={`${revealClass} w-full max-w-[860px] pb-28 pt-32 max-md:pb-32 max-md:pt-32`}
+          className={`${revealClass} relative w-full max-w-[900px] pb-32 pt-36 max-md:pb-[210px] max-md:pt-32 max-[460px]:pb-[228px]`}
           data-reveal
         >
-          <p className={eyebrowClass}>
+          <p className={`${eyebrowClass} text-gold/95`}>
             Maceio / voz / violao / harmonia brasileira
           </p>
           <h1
             id="hero-title"
-            className="m-0 font-display text-[4.35rem] font-bold leading-[0.82] text-paper md:text-[5.7rem] lg:text-[8rem] xl:text-[10rem]"
+            className="m-0 max-w-[11ch] font-display text-[4.85rem] font-bold leading-[0.78] text-paper text-shadow-premium md:text-[6.5rem] lg:text-[9rem] xl:text-[11rem]"
           >
             Djavan
           </h1>
-          <p className="mt-8 max-w-[760px] font-display text-[1.72rem] font-semibold leading-none text-balance text-paper md:text-[2.12rem] lg:text-[2.55rem] xl:text-5xl">
+          <p className="mt-8 max-w-[780px] font-display text-[1.75rem] font-semibold leading-[0.98] text-balance text-paper md:text-[2.2rem] lg:text-[2.7rem] xl:text-[3.35rem]">
             A cancao brasileira quando aprende a respirar em outro compasso.
           </p>
           <p className="mt-6 max-w-[610px] text-[1.12rem] leading-[1.62] text-paper/75 lg:text-[1.28rem]">
@@ -232,13 +314,13 @@ function App() {
           </p>
           <div className="mt-8 flex flex-wrap gap-3 max-[460px]:grid">
             <a
-              className="inline-flex min-h-12 items-center justify-center rounded-full bg-paper px-5 py-3 leading-none text-black-ink transition hover:-translate-y-0.5 hover:bg-white focus-visible:-translate-y-0.5 focus-visible:bg-white focus-visible:outline-none"
+              className="inline-flex min-h-12 items-center justify-center rounded-full bg-paper px-5 py-3 leading-none text-black-ink shadow-[0_18px_44px_rgba(242,240,233,0.18)] transition hover:-translate-y-0.5 hover:bg-white focus-visible:-translate-y-0.5 focus-visible:bg-white focus-visible:outline-none"
               href="#homenagem"
             >
               Entrar na obra
             </a>
             <a
-              className="inline-flex min-h-12 items-center justify-center rounded-full border border-paper/50 px-5 py-3 leading-none text-paper transition hover:-translate-y-0.5 hover:border-paper hover:bg-paper/10 focus-visible:-translate-y-0.5 focus-visible:border-paper focus-visible:bg-paper/10 focus-visible:outline-none"
+              className="inline-flex min-h-12 items-center justify-center rounded-full border border-paper/50 bg-black-ink/18 px-5 py-3 leading-none text-paper backdrop-blur-xl transition hover:-translate-y-0.5 hover:border-gold hover:bg-paper/10 focus-visible:-translate-y-0.5 focus-visible:border-gold focus-visible:bg-paper/10 focus-visible:outline-none"
               href="#galeria"
             >
               Ver retratos
@@ -247,7 +329,7 @@ function App() {
         </div>
 
         <aside
-          className="absolute bottom-[86px] right-[30px] grid w-[min(300px,36%)] gap-2.5 text-right leading-tight text-paper/70 max-md:bottom-16 max-md:left-[18px] max-md:right-[18px] max-md:w-auto max-md:grid-cols-3 max-md:items-end max-md:text-left max-[460px]:text-sm"
+          className="absolute bottom-[88px] right-[30px] grid w-[min(320px,36%)] gap-3 rounded-lg border border-paper/12 bg-black-ink/22 p-4 text-right leading-tight text-paper/70 shadow-[0_24px_70px_rgba(0,0,0,0.22)] backdrop-blur-xl max-md:bottom-[64px] max-md:left-[18px] max-md:right-[18px] max-md:w-auto max-md:grid-cols-[auto_minmax(0,1fr)_minmax(0,1fr)] max-md:items-end max-md:text-left max-[460px]:gap-2 max-[460px]:p-3 max-[460px]:text-sm"
           aria-label="Resumo da homenagem"
         >
           <span className="font-display text-5xl font-bold leading-[0.86] text-paper md:text-7xl">
@@ -256,6 +338,15 @@ function App() {
           <span>Maceio</span>
           <span>MPB sem fronteira</span>
         </aside>
+
+        <a
+          className="absolute bottom-[28px] left-[30px] z-30 inline-flex items-center gap-3 text-[0.92rem] text-paper/70 transition hover:text-paper focus-visible:text-paper focus-visible:outline-none max-md:left-[18px]"
+          href="#homenagem"
+          aria-label="Seguir para a homenagem"
+        >
+          <span className="scroll-cue" aria-hidden="true" />
+          Descer
+        </a>
 
         <div
           className="absolute inset-x-0 bottom-0 z-20 overflow-hidden border-t border-paper/15 bg-black-ink/70"
